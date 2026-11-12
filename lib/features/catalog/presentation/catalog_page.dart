@@ -134,6 +134,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       builder: (context) => _MoveDialog(
         subject: subject,
         parents: catalog.validParents(subject.id),
+        catalog: catalog,
       ),
     );
     if (destination != null && mounted) {
@@ -206,8 +207,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               : 'Expandir assunto',
           onPressed: hasChildren
               ? () => setState(() {
-                  if (!expandedSubjects.add(subject.id))
+                  if (!expandedSubjects.add(subject.id)) {
                     expandedSubjects.remove(subject.id);
+                  }
                 })
               : null,
           icon: Icon(
@@ -238,6 +240,35 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ],
           ),
         ),
+        if (MediaQuery.sizeOf(context).width >=
+            AppTokens.desktopBreakpoint) ...[
+          IconButton(
+            tooltip: 'Subir ${subject.name}',
+            icon: const Icon(Icons.arrow_upward),
+            onPressed: busy || index == 0
+                ? null
+                : () => perform(
+                    (r) => r.moveSubject(
+                      subject.id,
+                      subject.parentId,
+                      index: index - 1,
+                    ),
+                  ),
+          ),
+          IconButton(
+            tooltip: 'Descer ${subject.name}',
+            icon: const Icon(Icons.arrow_downward),
+            onPressed: busy || index == siblings.length - 1
+                ? null
+                : () => perform(
+                    (r) => r.moveSubject(
+                      subject.id,
+                      subject.parentId,
+                      index: index + 1,
+                    ),
+                  ),
+          ),
+        ],
         PopupMenuButton<String>(
           enabled: !busy,
           tooltip: 'Ações de ${subject.name}',
@@ -366,8 +397,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   ? 'Recolher disciplina'
                   : 'Expandir disciplina',
               onPressed: () => setState(() {
-                if (!expandedDisciplines.add(discipline.id))
+                if (!expandedDisciplines.add(discipline.id)) {
                   expandedDisciplines.remove(discipline.id);
+                }
               }),
               icon: Icon(
                 expandedDisciplines.contains(discipline.id)
@@ -394,6 +426,27 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 ],
               ),
             ),
+            if (MediaQuery.sizeOf(context).width >=
+                AppTokens.desktopBreakpoint) ...[
+              IconButton(
+                tooltip: 'Subir ${discipline.name}',
+                icon: const Icon(Icons.arrow_upward),
+                onPressed: busy || index == 0
+                    ? null
+                    : () => perform(
+                        (r) => r.reorderDiscipline(discipline.id, index - 1),
+                      ),
+              ),
+              IconButton(
+                tooltip: 'Descer ${discipline.name}',
+                icon: const Icon(Icons.arrow_downward),
+                onPressed: busy || index == catalog.disciplines.length - 1
+                    ? null
+                    : () => perform(
+                        (r) => r.reorderDiscipline(discipline.id, index + 1),
+                      ),
+              ),
+            ],
             PopupMenuButton<String>(
               enabled: !busy,
               tooltip: 'Ações de ${discipline.name}',
@@ -575,8 +628,9 @@ class _CatalogEditorState extends State<_CatalogEditor> {
   }
 
   void save() {
-    if (form.currentState!.validate())
+    if (form.currentState!.validate()) {
       Navigator.pop(context, (name.text, description.text));
+    }
   }
 
   @override
@@ -622,9 +676,14 @@ class _CatalogEditorState extends State<_CatalogEditor> {
 }
 
 class _MoveDialog extends StatefulWidget {
-  const _MoveDialog({required this.subject, required this.parents});
+  const _MoveDialog({
+    required this.subject,
+    required this.parents,
+    required this.catalog,
+  });
   final Subject subject;
   final List<Subject> parents;
+  final Catalog catalog;
   @override
   State<_MoveDialog> createState() => _MoveDialogState();
 }
@@ -648,7 +707,7 @@ class _MoveDialogState extends State<_MoveDialog> {
             DropdownMenuItem(
               value: parent.id,
               child: Text(
-                '${parent.name} · ${parent.id.substring(0, 6)}',
+                widget.catalog.path(parent.id),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

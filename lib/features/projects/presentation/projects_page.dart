@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/project_providers.dart';
 import '../data/project_repository.dart';
 import '../../../app/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class ProjectsPage extends ConsumerStatefulWidget {
   const ProjectsPage({super.key});
@@ -81,7 +82,12 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
             data: (items) => Column(
               children: [
                 if (items.isEmpty) const Text('Nenhum projeto por enquanto.'),
-                for (final p in items) ListTile(title: Text(p.name)),
+                for (final p in items)
+                  ListTile(
+                    title: Text(p.name),
+                    subtitle: const Text('Abrir edital verticalizado'),
+                    onTap: () => context.go('/syllabus/${p.id}'),
+                  ),
               ],
             ),
           ),

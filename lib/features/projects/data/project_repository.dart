@@ -27,6 +27,15 @@ class ProjectRepository {
         .toList();
   }
 
+  Future<Project?> find(int id) async {
+    final rows = await database.customSelect(
+      'SELECT id, name FROM projects WHERE id=?',
+      variables: [Variable(id)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return Project(rows.single.read<int>('id'), rows.single.read<String>('name'));
+  }
+
   Future<void> create(String name) async {
     final error = validateName(name);
     if (error != null) throw ArgumentError(error);

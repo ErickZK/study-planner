@@ -114,6 +114,98 @@ class CatalogRepository {
         ]);
         return id;
       });
+
+  /// Inserts a deterministic record for a seed service. The caller owns the
+  /// transaction; this method deliberately does not open a nested one.
+  Future<void> insertDisciplineWithId(
+    String id,
+    String name, {
+    String? description,
+    int? position,
+  }) async {
+    _validate(name);
+    final exists = await db.customSelect(
+      'SELECT id, deleted_at FROM disciplines WHERE id=?',
+      variables: [Variable(id)],
+    ).get();
+    if (exists.isNotEmpty) {
+      await db.customStatement(
+        'UPDATE disciplines SET name=?, description=?, deleted_at=NULL, updated_at=? WHERE id=?',
+        [name.trim(), _description(description), _now, id],
+      );
+      return;
+    }
+    final existingIds = (await _load()).disciplines.map((d) => d.id).toList();
+    final count = position ?? existingIds.length;
+    await _insertDiscipline(id, name, description, count);
+    await _positions('disciplines', [...existingIds, id]);
+  }
+
+  /// Inserts a deterministic subject for a seed service. The caller owns the
+  /// transaction and must insert its parent first.
+  Future<void> insertSubjectWithId(
+    String id,
+    String disciplineId,
+    String? parentId,
+    String name, {
+    String? description,
+    int? position,
+  }) async {
+    _validate(name);
+    final exists = await db.customSelect(
+      'SELECT id, deleted_at FROM subjects WHERE id=?',
+      variables: [Variable(id)],
+    ).get();
+    if (exists.isNotEmpty) {
+      await db.customStatement(
+        'UPDATE subjects SET discipline_id=?, parent_id=?, name=?, description=?, deleted_at=NULL, updated_at=? WHERE id=?',
+        [disciplineId, parentId, name.trim(), _description(description), _now, id],
+      );
+      return;
+    }
+    final catalog = await _load();
+    catalog.discipline(disciplineId);
+    if (parentId != null && catalog.subject(parentId).disciplineId != disciplineId) {
+      throw const CatalogException('O pai deve pertencer à mesma disciplina.');
+    }
+    final siblings = catalog.children(disciplineId, parentId);
+    await _insertSubject(
+      id,
+      disciplineId,
+      parentId,
+      name,
+      description,
+      position ?? siblings.length,
+    );
+    await _positions('subjects', [...siblings.map((s) => s.id), id]);
+  }
+
+  Future<({int disciplines, int subjects})> removeDemoRecords(
+    String idPrefix,
+  ) => db.transaction(() async {
+    final now = _now;
+    final disciplineRows = await db.customSelect(
+      'SELECT id FROM disciplines WHERE id LIKE ? AND deleted_at IS NULL',
+      variables: [Variable('$idPrefix%')],
+    ).get();
+    final subjectRows = await db.customSelect(
+      'SELECT id FROM subjects WHERE id LIKE ? AND deleted_at IS NULL',
+      variables: [Variable('$idPrefix%')],
+    ).get();
+    if (subjectRows.isNotEmpty) {
+      await db.customStatement(
+        'UPDATE subjects SET deleted_at=?, updated_at=? WHERE id LIKE ?',
+        [now, now, '$idPrefix%'],
+      );
+    }
+    if (disciplineRows.isNotEmpty) {
+      await db.customStatement(
+        'UPDATE disciplines SET deleted_at=?, updated_at=? WHERE id LIKE ?',
+        [now, now, '$idPrefix%'],
+      );
+    }
+    return (disciplines: disciplineRows.length, subjects: subjectRows.length);
+  });
   Future<void> editDiscipline(String id, String name, {String? description}) =>
       db.transaction(() async {
         _validate(name);
@@ -173,8 +265,9 @@ class CatalogRepository {
         final catalog = await _load();
         catalog.discipline(id);
         final ids = catalog.disciplines.map((d) => d.id).toList()..remove(id);
-        if (index < 0 || index > ids.length)
+        if (index < 0 || index > ids.length) {
           throw const CatalogException('Posição inválida.');
+        }
         ids.insert(index, id);
         await _positions('disciplines', ids);
       });
@@ -234,8 +327,9 @@ class CatalogRepository {
         catalog.children(item.disciplineId, parentId).map((s) => s.id).toList()
           ..remove(id);
     final position = index ?? destination.length;
-    if (position < 0 || position > destination.length)
+    if (position < 0 || position > destination.length) {
       throw const CatalogException('Posição inválida.');
+    }
     await db.customStatement(
       'UPDATE subjects SET parent_id=?,updated_at=? WHERE id=?',
       [parentId, _now, id],

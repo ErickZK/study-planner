@@ -2,8 +2,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../projects/application/project_providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../syllabus/data/syllabus_repository.dart';
+import '../../projects/application/project_providers.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -41,9 +42,21 @@ class DashboardPage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 for (final project in projects)
-                  ListTile(
-                    leading: const Icon(Icons.folder_outlined),
-                    title: Text(project.name),
+                  FutureBuilder(
+                    future: SyllabusRepository(ref.read(databaseProvider).requireValue)
+                        .loadForProject(project.id),
+                    builder: (context, snapshot) {
+                      final syllabus = snapshot.data;
+                      final subtitle = syllabus == null
+                          ? 'Configurar edital verticalizado'
+                          : '${syllabus.disciplineIds.length} disciplinas · ${syllabus.leaves.length} assuntos · ${(syllabus.completion * 100).round()}%';
+                      return ListTile(
+                        leading: const Icon(Icons.folder_outlined),
+                        title: Text(project.name),
+                        subtitle: Text(subtitle),
+                        onTap: () => context.go('/syllabus/${project.id}'),
+                      );
+                    },
                   ),
                 const SizedBox(height: AppTokens.medium),
                 FilledButton.icon(

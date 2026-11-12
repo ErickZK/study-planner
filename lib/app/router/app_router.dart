@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/projects/presentation/projects_page.dart';
 import '../../features/catalog/presentation/catalog_page.dart';
+import '../../features/settings/presentation/settings_page.dart';
+import '../../features/syllabus/presentation/syllabus_page.dart';
 import '../theme/app_theme.dart';
 
 const destinations = <(String, String, IconData)>[
@@ -32,6 +34,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 if (d.$1 == '/') return const DashboardPage();
                 if (d.$1 == '/projects') return const ProjectsPage();
                 if (d.$1 == '/disciplines') return const CatalogPage();
+                if (d.$1 == '/settings') return const SettingsPage();
+                if (d.$1 == '/syllabus') return const Center(child: Text('Selecione um projeto para abrir o edital.'));
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(AppTokens.large),
@@ -40,6 +44,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 );
               },
             ),
+          GoRoute(
+            path: '/syllabus/:projectId',
+            builder: (context, state) => SyllabusPage(
+              projectId: int.parse(state.pathParameters['projectId']!),
+            ),
+          ),
         ],
       ),
     ],
@@ -55,7 +65,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = destinations.firstWhere(
-      (d) => d.$1 == path,
+      (d) => d.$1 == path || (d.$1 == '/syllabus' && path.startsWith('/syllabus/')),
       orElse: () => destinations.first,
     );
     Widget menu() => Builder(

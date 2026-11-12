@@ -1,12 +1,13 @@
 import 'package:drift/drift.dart';
 import 'migrations/catalog_schema.dart';
+import 'migrations/syllabus_schema.dart';
 
 /// SQL migrations are explicit; no destructive fallback is allowed.
 class AppDatabase extends GeneratedDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -23,11 +24,16 @@ class AppDatabase extends GeneratedDatabase {
       )
     ''');
       await _createCatalog();
+      await _createSyllabus();
     },
     onUpgrade: (m, from, to) async {
-      if (from == 1 && to == 2) {
+      if (from < 2 && to >= 2) {
         await transaction(_createCatalog);
-      } else {
+      }
+      if (from < 3 && to >= 3) {
+        await transaction(_createSyllabus);
+      }
+      if (from > 3 || to < from) {
         throw StateError('Migração não implementada: $from -> $to');
       }
     },
@@ -38,6 +44,12 @@ class AppDatabase extends GeneratedDatabase {
 
   Future<void> _createCatalog() async {
     for (final statement in catalogSchema) {
+      await customStatement(statement);
+    }
+  }
+
+  Future<void> _createSyllabus() async {
+    for (final statement in syllabusSchema) {
       await customStatement(statement);
     }
   }

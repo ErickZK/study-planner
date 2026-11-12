@@ -85,8 +85,9 @@ class Catalog {
     final seen = <String>{};
     while (stack.isNotEmpty) {
       final item = stack.removeLast();
-      if (!seen.add(item.id))
+      if (!seen.add(item.id)) {
         throw const CatalogException('Hierarquia inválida.');
+      }
       result.add(item);
       stack.addAll(children(item.disciplineId, item.id).reversed);
     }
@@ -130,5 +131,19 @@ class Catalog {
               s.disciplineId == item.disciplineId && !excluded.contains(s.id),
         )
         .toList();
+  }
+
+  String path(String id) {
+    final names = <String>[];
+    Subject? item = subject(id);
+    final seen = <String>{};
+    while (item != null) {
+      if (!seen.add(item.id)) {
+        throw const CatalogException('Hierarquia inválida.');
+      }
+      names.add(item.name);
+      item = item.parentId == null ? null : byId[item.parentId];
+    }
+    return names.reversed.join(' / ');
   }
 }
