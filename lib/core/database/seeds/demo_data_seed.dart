@@ -154,8 +154,8 @@ const demoDisciplines = <DemoDisciplineDefinition>[
   ]),
 ];
 
-int _countSubjects(Iterable<DemoSubjectDefinition> definitions) =>
-    definitions.fold(0, (total, item) => total + 1 + _countSubjects(item.children));
+int _countSubjects(Iterable<DemoSubjectDefinition> definitions) => definitions
+    .fold(0, (total, item) => total + 1 + _countSubjects(item.children));
 
 final demoExpectedStats = DemoSeedStats(
   disciplines: demoDisciplines.length,
@@ -170,12 +170,15 @@ class DemoDataSeed {
 
   final AppDatabase database;
 
-  Future<DemoSeedStats> load({int? failAfter}) => database.transaction(() async {
+  Future<DemoSeedStats> load({int? failAfter}) =>
+      database.transaction(() async {
         final repository = CatalogRepository(database);
         _insertedCounter = 0;
-        for (var disciplineIndex = 0;
-            disciplineIndex < demoDisciplines.length;
-            disciplineIndex++) {
+        for (
+          var disciplineIndex = 0;
+          disciplineIndex < demoDisciplines.length;
+          disciplineIndex++
+        ) {
           final discipline = demoDisciplines[disciplineIndex];
           await repository.insertDisciplineWithId(
             _disciplineId(disciplineIndex),
@@ -184,9 +187,11 @@ class DemoDataSeed {
           );
           _insertedCounter++;
           _throwIfRequested(failAfter);
-          for (var subjectIndex = 0;
-              subjectIndex < discipline.subjects.length;
-              subjectIndex++) {
+          for (
+            var subjectIndex = 0;
+            subjectIndex < discipline.subjects.length;
+            subjectIndex++
+          ) {
             await _insertSubjectTree(
               repository,
               disciplineIndex,
@@ -228,7 +233,11 @@ class DemoDataSeed {
     _insertedCounter++;
     _throwIfRequested(failAfter);
     var inserted = 1;
-    for (var childIndex = 0; childIndex < definition.children.length; childIndex++) {
+    for (
+      var childIndex = 0;
+      childIndex < definition.children.length;
+      childIndex++
+    ) {
       inserted += await _insertSubjectTree(
         repository,
         disciplineIndex,
@@ -249,8 +258,11 @@ class DemoDataSeed {
     }
   }
 
-  String _disciplineId(int index) => '$demoIdPrefix' 'discipline-${index + 1}';
+  String _disciplineId(int index) =>
+      '$demoIdPrefix'
+      'discipline-${index + 1}';
 
   String _subjectId(int disciplineIndex, List<int> path) =>
-      '$demoIdPrefix' 'subject-${disciplineIndex + 1}-${path.map((item) => item + 1).join('-')}';
+      '$demoIdPrefix'
+      'subject-${disciplineIndex + 1}-${path.map((item) => item + 1).join('-')}';
 }

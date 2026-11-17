@@ -25,10 +25,21 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  navigation_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(),
+          "tjsp_planner/navigation",
+          &flutter::StandardMethodCodec::GetInstance());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
-    this->Show();
+    // Open the Planner maximized in the monitor work area. SW_MAXIMIZE keeps
+    // the Windows taskbar visible, unlike a borderless fullscreen window.
+    // The first ShowWindow call can be overridden by STARTUPINFO (for example
+    // when launched from a shortcut or PowerShell). Consume that state first,
+    // then explicitly maximize so startup is deterministic.
+    ShowWindow(this->GetHandle(), SW_SHOW);
+    ShowWindow(this->GetHandle(), SW_MAXIMIZE);
   });
 
   // Flutter can complete the first frame before the "show window" callback is
@@ -40,6 +51,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  navigation_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -62,6 +74,24 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   switch (message) {
+    case WM_COPYDATA: {
+      const auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
+      if (data == nullptr || data->dwData != 1 || data->lpData == nullptr ||
+          data->cbData == 0) {
+        break;
+      }
+      const auto* route = static_cast<const char*>(data->lpData);
+      const size_t length = strnlen(route, data->cbData);
+      if (navigation_channel_) {
+        navigation_channel_->InvokeMethod(
+            "openRoute", std::make_unique<flutter::EncodableValue>(
+                             std::string(route, length)));
+      }
+      if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
+      ShowWindow(hwnd, SW_SHOW);
+      SetForegroundWindow(hwnd);
+      return TRUE;
+    }
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;

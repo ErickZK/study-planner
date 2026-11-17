@@ -28,22 +28,25 @@ void main() {
     expect(await _count(database, 'subjects'), first.subjects);
   });
 
-  test('preserva hierarquia profunda e remove somente dados demonstrativos', () async {
-    final repository = CatalogRepository(database);
-    final realId = await repository.createDiscipline('Disciplina real');
-    await DemoDataSeed(database).load();
+  test(
+    'preserva hierarquia profunda e remove somente dados demonstrativos',
+    () async {
+      final repository = CatalogRepository(database);
+      final realId = await repository.createDiscipline('Disciplina real');
+      await DemoDataSeed(database).load();
 
-    final catalog = await repository.load();
-    expect(catalog.disciplines, hasLength(7));
-    expect(catalog.subtree('demo-v1-s-1-2-2-2-1'), isNotEmpty);
+      final catalog = await repository.load();
+      expect(catalog.disciplines, hasLength(7));
+      expect(catalog.subtree('demo-v1-s-1-2-2-2-1-1'), isNotEmpty);
 
-    final removed = await DemoDataSeed(database).remove();
-    expect(removed.disciplines, 6);
-    expect(removed.subjects, demoExpectedStats.subjects);
-    final after = await repository.load();
-    expect(after.discipline(realId).name, 'Disciplina real');
-    expect(after.disciplines, hasLength(1));
-  });
+      final removed = await DemoDataSeed(database).remove();
+      expect(removed.disciplines, 6);
+      expect(removed.subjects, demoExpectedStats.subjects);
+      final after = await repository.load();
+      expect(after.discipline(realId).name, 'Disciplina real');
+      expect(after.disciplines, hasLength(1));
+    },
+  );
 
   test('faz rollback quando o carregamento falha', () async {
     expect(
@@ -55,7 +58,9 @@ void main() {
   });
 
   test('mantém dados após reabertura do banco', () async {
-    final directory = await Directory.systemTemp.createTemp('study-planner-seed-');
+    final directory = await Directory.systemTemp.createTemp(
+      'study-planner-seed-',
+    );
     final path = '${directory.path}${Platform.pathSeparator}catalog.sqlite';
     final first = AppDatabase(NativeDatabase(File(path)));
     await first.initialize();
@@ -72,8 +77,10 @@ void main() {
 }
 
 Future<int> _count(AppDatabase database, String table) async {
-  final rows = await database.customSelect(
-    'SELECT COUNT(*) AS total FROM $table WHERE deleted_at IS NULL',
-  ).get();
+  final rows = await database
+      .customSelect(
+        'SELECT COUNT(*) AS total FROM $table WHERE deleted_at IS NULL',
+      )
+      .get();
   return rows.single.read<int>('total');
 }

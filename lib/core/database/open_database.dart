@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -17,7 +18,16 @@ Future<AppDatabase> openDatabase() async {
   try {
     await db.initialize();
     return db;
-  } catch (_) {
+  } catch (error, stackTrace) {
+    assert(() {
+      developer.log(
+        'Database initialization failed',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'study_planner.database',
+      );
+      return true;
+    }());
     await db.close();
     rethrow;
   }

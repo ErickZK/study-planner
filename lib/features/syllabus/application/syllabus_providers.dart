@@ -7,7 +7,10 @@ final syllabusRepositoryProvider = Provider<SyllabusRepository>(
   (ref) => SyllabusRepository(ref.watch(databaseProvider).requireValue),
 );
 
-final syllabusProvider = FutureProvider.family<SyllabusSnapshot, int>((ref, projectId) async {
+final syllabusProvider = FutureProvider.family<SyllabusSnapshot, int>((
+  ref,
+  scheduleId,
+) async {
   await ref.watch(databaseProvider.future);
-  return ref.watch(syllabusRepositoryProvider).loadForProject(projectId);
+  return ref.watch(syllabusRepositoryProvider).loadForSchedule(scheduleId);
 });

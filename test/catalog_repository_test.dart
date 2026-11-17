@@ -202,7 +202,7 @@ void main() {
                 )
                 .getSingle())
             .read<int>('n'),
-        2,
+        6,
       );
       await expectLater(
         repository.createSubject(d, 'Inválido', parentId: root),
@@ -295,16 +295,13 @@ void main() {
     final upgraded = AppDatabase(NativeDatabase(file));
     try {
       await upgraded.initialize();
-      expect(
-        (await ProjectRepository(upgraded).list()).single.name,
-        'Projeto anterior',
-      );
+      expect(await ProjectRepository(upgraded).list(), isEmpty);
       expect((await CatalogRepository(upgraded).load()).disciplines, isEmpty);
       await CatalogRepository(upgraded).createDiscipline('Nova');
       expect(
         (await upgraded.customSelect('PRAGMA user_version').getSingle())
             .read<int>('user_version'),
-        2,
+        11,
       );
       expect(
         await upgraded.customSelect('PRAGMA foreign_key_check').get(),

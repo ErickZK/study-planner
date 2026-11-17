@@ -2,10 +2,10 @@ const syllabusSchema = <String>[
   '''
   CREATE TABLE vertical_syllabi (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL UNIQUE,
+    schedule_id INTEGER NOT NULL UNIQUE,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
   )
   ''',
   '''
@@ -32,9 +32,12 @@ const syllabusSchema = <String>[
   ''',
   '''
   CREATE TABLE topic_progress (
-    topic_id TEXT PRIMARY KEY,
+    syllabus_id INTEGER NOT NULL,
+    topic_id TEXT NOT NULL,
     completed INTEGER NOT NULL DEFAULT 0,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    PRIMARY KEY (syllabus_id, topic_id),
+    FOREIGN KEY (syllabus_id) REFERENCES vertical_syllabi(id) ON DELETE CASCADE
   )
   ''',
   'CREATE INDEX syllabus_topics_parent_idx ON syllabus_topics(syllabus_id, parent_topic_id, position)',

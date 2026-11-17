@@ -124,10 +124,12 @@ class CatalogRepository {
     int? position,
   }) async {
     _validate(name);
-    final exists = await db.customSelect(
-      'SELECT id, deleted_at FROM disciplines WHERE id=?',
-      variables: [Variable(id)],
-    ).get();
+    final exists = await db
+        .customSelect(
+          'SELECT id, deleted_at FROM disciplines WHERE id=?',
+          variables: [Variable(id)],
+        )
+        .get();
     if (exists.isNotEmpty) {
       await db.customStatement(
         'UPDATE disciplines SET name=?, description=?, deleted_at=NULL, updated_at=? WHERE id=?',
@@ -152,20 +154,30 @@ class CatalogRepository {
     int? position,
   }) async {
     _validate(name);
-    final exists = await db.customSelect(
-      'SELECT id, deleted_at FROM subjects WHERE id=?',
-      variables: [Variable(id)],
-    ).get();
+    final exists = await db
+        .customSelect(
+          'SELECT id, deleted_at FROM subjects WHERE id=?',
+          variables: [Variable(id)],
+        )
+        .get();
     if (exists.isNotEmpty) {
       await db.customStatement(
         'UPDATE subjects SET discipline_id=?, parent_id=?, name=?, description=?, deleted_at=NULL, updated_at=? WHERE id=?',
-        [disciplineId, parentId, name.trim(), _description(description), _now, id],
+        [
+          disciplineId,
+          parentId,
+          name.trim(),
+          _description(description),
+          _now,
+          id,
+        ],
       );
       return;
     }
     final catalog = await _load();
     catalog.discipline(disciplineId);
-    if (parentId != null && catalog.subject(parentId).disciplineId != disciplineId) {
+    if (parentId != null &&
+        catalog.subject(parentId).disciplineId != disciplineId) {
       throw const CatalogException('O pai deve pertencer à mesma disciplina.');
     }
     final siblings = catalog.children(disciplineId, parentId);
@@ -184,14 +196,18 @@ class CatalogRepository {
     String idPrefix,
   ) => db.transaction(() async {
     final now = _now;
-    final disciplineRows = await db.customSelect(
-      'SELECT id FROM disciplines WHERE id LIKE ? AND deleted_at IS NULL',
-      variables: [Variable('$idPrefix%')],
-    ).get();
-    final subjectRows = await db.customSelect(
-      'SELECT id FROM subjects WHERE id LIKE ? AND deleted_at IS NULL',
-      variables: [Variable('$idPrefix%')],
-    ).get();
+    final disciplineRows = await db
+        .customSelect(
+          'SELECT id FROM disciplines WHERE id LIKE ? AND deleted_at IS NULL',
+          variables: [Variable('$idPrefix%')],
+        )
+        .get();
+    final subjectRows = await db
+        .customSelect(
+          'SELECT id FROM subjects WHERE id LIKE ? AND deleted_at IS NULL',
+          variables: [Variable('$idPrefix%')],
+        )
+        .get();
     if (subjectRows.isNotEmpty) {
       await db.customStatement(
         'UPDATE subjects SET deleted_at=?, updated_at=? WHERE id LIKE ?',

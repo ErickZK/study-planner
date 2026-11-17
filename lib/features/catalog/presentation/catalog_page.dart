@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/widgets/planner_ui.dart';
 import '../application/catalog_providers.dart';
 import '../data/catalog_repository.dart';
 import '../domain/catalog.dart';
@@ -21,6 +23,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   final expandedSubjects = <String>{};
   String query = '';
   bool busy = false;
+  String? selectedDisciplineId;
 
   Future<void> perform(
     Future<dynamic> Function(CatalogRepository) action,
@@ -105,7 +108,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         title: Text('Excluir ${subject?.name ?? discipline.name}?'),
         content: Text(
           'Esta exclusão é global e removerá $count assunto(s) da lista ativa${subject == null ? ' e a disciplina' : ', incluindo o assunto selecionado e seus descendentes'}. '
-          'Os registros serão preservados internamente para integridade histórica. Não há projetos vinculados ao catálogo nesta etapa.',
+          'Os registros serão preservados internamente para manter o histórico dos cronogramas.',
         ),
         actions: [
           TextButton(
@@ -182,7 +185,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final hasChildren = catalog.children(discipline.id, subject.id).isNotEmpty;
     final row = Row(
       children: [
-        LongPressDraggable<String>(
+        AdaptiveDraggable<String>(
           data: subject.id,
           maxSimultaneousDrags: busy ? 0 : 1,
           feedback: Material(
@@ -374,7 +377,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ),
         Row(
           children: [
-            LongPressDraggable<_DisciplineDrag>(
+            AdaptiveDraggable<_DisciplineDrag>(
               data: _DisciplineDrag(discipline.id),
               maxSimultaneousDrags: busy ? 0 : 1,
               feedback: Material(
@@ -528,41 +531,26 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(AppTokens.medium),
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            SizedBox(
-              width: 280,
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Pesquisar disciplinas',
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onChanged: (text) => setState(() => query = text),
-              ),
-            ),
-            FilledButton.icon(
-              onPressed: busy ? null : () => edit(),
-              icon: const Icon(Icons.add),
-              label: const Text('Nova disciplina'),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => PlannerPageFrame(
+    icon: Icons.layers_outlined,
+    title: 'Disciplinas e assuntos',
+    subtitle: 'Organize o conteúdo usado nos editais e planejamentos.',
+    actions: [
+      FilledButton.icon(
+        onPressed: busy ? null : () => edit(),
+        icon: const Icon(Icons.add),
+        label: const Text('Nova disciplina'),
       ),
-      if (busy) const LinearProgressIndicator(),
-      Expanded(
-        child: ref
+    ],
+    child: Column(
+      children: [
+        if (busy) const LinearProgressIndicator(),
+        ref
             .watch(catalogProvider)
             .when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
+              error: (error, stack) => PlannerCard(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text('Não foi possível carregar o catálogo.'),
                     TextButton(
@@ -572,34 +560,263 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   ],
                 ),
               ),
-              data: (catalog) {
-                final disciplines = catalog.search(query);
-                return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    const Text(
-                      'Catálogo global · disponível para reutilização futura nos projetos.',
-                    ),
-                    const Text(
-                      'Mantenha a alça pressionada para arrastar. Solte sobre um assunto para torná-lo pai ou na linha acima para ordenar.',
-                    ),
-                    if (disciplines.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          catalog.disciplines.isEmpty
-                              ? 'Nenhuma disciplina cadastrada.'
-                              : 'Nenhuma disciplina encontrada.',
-                        ),
-                      ),
-                    for (final discipline in disciplines)
-                      disciplineCard(catalog, discipline),
-                  ],
-                );
-              },
+              data: _catalogWorkspace,
             ),
-      ),
-    ],
+      ],
+    ),
+  );
+
+  Widget _catalogWorkspace(Catalog catalog) {
+    final filtered = catalog.search(query);
+    final selected =
+        catalog.disciplines
+            .where((discipline) => discipline.id == selectedDisciplineId)
+            .firstOrNull ??
+        catalog.disciplines.firstOrNull;
+    if (selected != null && selectedDisciplineId == null) {
+      selectedDisciplineId = selected.id;
+      expandedDisciplines.add(selected.id);
+    }
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 980;
+            final list = _disciplineList(catalog, filtered, selected);
+            final tree = _selectedTree(catalog, selected);
+            final details = _disciplineDetails(catalog, selected);
+            if (compact) {
+              return Column(
+                children: [
+                  list,
+                  const SizedBox(height: 12),
+                  tree,
+                  const SizedBox(height: 12),
+                  details,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: list),
+                const SizedBox(width: 12),
+                Expanded(flex: 5, child: tree),
+                const SizedBox(width: 12),
+                Expanded(flex: 3, child: details),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        PlannerCard(
+          child: InkWell(
+            onTap: () => context.go('/schedules'),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.upload_file_outlined, size: 42),
+                  SizedBox(width: 18),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Importar conteúdo do edital',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          'Abra um plano de estudos para importar o material TJSP 2026 e revisar o conteúdo antes de usar.',
+                          style: TextStyle(color: AppTokens.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _disciplineList(
+    Catalog catalog,
+    List<Discipline> disciplines,
+    Discipline? selected,
+  ) => PlannerCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitle(
+          'Disciplinas (${catalog.disciplines.length})',
+          icon: Icons.layers_outlined,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          decoration: const InputDecoration(
+            hintText: 'Pesquisar disciplinas',
+            prefixIcon: Icon(Icons.search),
+          ),
+          onChanged: (text) => setState(() => query = text),
+        ),
+        const SizedBox(height: 10),
+        if (disciplines.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Nenhuma disciplina encontrada.'),
+          ),
+        for (final entry in disciplines.indexed)
+          InkWell(
+            borderRadius: BorderRadius.circular(9),
+            onTap: () => setState(() {
+              selectedDisciplineId = entry.$2.id;
+              expandedDisciplines.add(entry.$2.id);
+            }),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+              decoration: BoxDecoration(
+                color: selected?.id == entry.$2.id ? AppTokens.greenSoft : null,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.drag_indicator,
+                    size: 17,
+                    color: AppTokens.muted,
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color:
+                          disciplinePalette[entry.$1 %
+                              disciplinePalette.length],
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      entry.$2.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: selected?.id == entry.$2.id
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTokens.hover,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${catalog.subjects.where((subject) => subject.disciplineId == entry.$2.id).length} assuntos',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Widget _selectedTree(Catalog catalog, Discipline? selected) => PlannerCard(
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+    child: selected == null
+        ? const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('Crie uma disciplina para começar.'),
+          )
+        : Column(
+            children: [
+              disciplineCard(catalog, selected),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: busy
+                      ? null
+                      : () {
+                          setState(() => expandedDisciplines.add(selected.id));
+                          edit(disciplineId: selected.id);
+                        },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Adicionar assunto'),
+                ),
+              ),
+            ],
+          ),
+  );
+
+  Widget _disciplineDetails(
+    Catalog catalog,
+    Discipline? selected,
+  ) => PlannerCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Detalhes da disciplina', icon: Icons.info_outline),
+        const SizedBox(height: 16),
+        const Text(
+          'Nome da disciplina',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          key: ValueKey(selected?.id),
+          initialValue: selected?.name ?? '',
+          readOnly: true,
+        ),
+        const SizedBox(height: 16),
+        const Text('Descrição', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        TextFormField(
+          key: ValueKey('description-${selected?.id}'),
+          initialValue: selected?.description ?? 'Sem descrição.',
+          readOnly: true,
+          maxLines: 4,
+        ),
+        const SizedBox(height: 16),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.account_tree_outlined),
+          title: const Text('Assuntos cadastrados'),
+          trailing: Text(
+            selected == null
+                ? '0'
+                : '${catalog.subjects.where((subject) => subject.disciplineId == selected.id).length}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: selected == null || busy
+              ? null
+              : () => edit(discipline: selected),
+          icon: const Icon(Icons.edit_outlined),
+          label: const Text('Editar disciplina'),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+        ),
+      ],
+    ),
   );
 }
 
