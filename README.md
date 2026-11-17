@@ -13,8 +13,11 @@ flutter run -d windows
 flutter devices
 flutter run -d <id-android>
 flutter build windows
+dart run msix:create --build-windows false --install-certificate false
 flutter build apk --debug
 ```
+
+No Windows, o build inclui o widget próprio da barra de tarefas em `taskbar_widget/`. O MSIX gerado contém o Planner e o widget no mesmo instalador e registra uma inicialização silenciosa para manter o resumo disponível após o login. Consulte [a documentação do widget](windows/taskbar_widget/README.md).
 
 `pub get` deve gerar os registradores nativos e o lockfile. Versione `pubspec.lock` depois de resolver e validar versões. Os testes injetam SQLite em memória/arquivo temporário e não dependem da instalação do app.
 

@@ -20,3 +20,6 @@ android/key.properties
 *.jks
 *.keystore
 .idea/
+windows/widbar/
+windows/taskbar_widget/bin/
+windows/taskbar_widget/obj/

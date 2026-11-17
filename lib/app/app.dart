@@ -2,13 +2,29 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/projects/application/project_providers.dart';
+import '../core/platform/windows_navigation.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
-class StudyPlannerApp extends ConsumerWidget {
+class StudyPlannerApp extends ConsumerStatefulWidget {
   const StudyPlannerApp({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StudyPlannerApp> createState() => _StudyPlannerAppState();
+}
+
+class _StudyPlannerAppState extends ConsumerState<StudyPlannerApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      attachWindowsNavigation((route) => ref.read(routerProvider).go(route));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final database = ref.watch(databaseProvider);
     return MaterialApp.router(
       title: 'Study Planner',

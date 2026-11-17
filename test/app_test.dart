@@ -6,6 +6,8 @@ import 'package:study_planner/app/app.dart';
 import 'package:study_planner/app/router/app_router.dart';
 import 'package:study_planner/core/database/app_database.dart';
 import 'package:study_planner/features/projects/application/project_providers.dart';
+import 'package:study_planner/features/dashboard/application/dashboard_provider.dart';
+import 'package:study_planner/features/schedules/data/schedule_repository.dart';
 
 void main() {
   for (final size in [const Size(390, 844), const Size(1280, 800)]) {
@@ -32,9 +34,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Nenhum projeto por enquanto.'), findsOneWidget);
+      expect(find.text('Nenhum cronograma por enquanto.'), findsOneWidget);
       final dashboardContext = tester.element(
-        find.text('Nenhum projeto por enquanto.'),
+        find.text('Nenhum cronograma por enquanto.'),
       );
       expect(
         Localizations.localeOf(dashboardContext),
@@ -58,15 +60,14 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text(destination.$2), findsWidgets);
       }
-      container.read(routerProvider).go('/projects');
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField), 'Projeto real');
-      await tester.tap(find.text('Salvar projeto'));
-      await tester.pumpAndSettle();
+      final schedules = ScheduleRepository(db);
+      final ownerId = await schedules.ensureOwner();
+      await schedules.create(ownerId, 'Cronograma real');
+      container.invalidate(dashboardProvider);
       container.read(routerProvider).go('/');
       await tester.pumpAndSettle();
-      expect(find.text('Projeto real'), findsOneWidget);
-      expect(find.text('Nenhum projeto por enquanto.'), findsNothing);
+      expect(find.text('Cronograma real'), findsOneWidget);
+      expect(find.text('Nenhum cronograma por enquanto.'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
@@ -94,6 +95,6 @@ void main() {
     );
     await tester.tap(find.text('Tentar novamente'));
     await tester.pumpAndSettle();
-    expect(find.text('Nenhum projeto por enquanto.'), findsOneWidget);
+    expect(find.text('Nenhum cronograma por enquanto.'), findsOneWidget);
   });
 }

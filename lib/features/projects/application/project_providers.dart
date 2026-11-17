@@ -25,3 +25,8 @@ final projectsProvider = FutureProvider<List<Project>>((ref) async {
   await ref.watch(databaseProvider.future);
   return ref.watch(projectRepositoryProvider).list();
 });
+
+final projectProvider = FutureProvider.family<Project?, int>((ref, id) async {
+  await ref.watch(databaseProvider.future);
+  return ref.watch(projectRepositoryProvider).find(id);
+});
