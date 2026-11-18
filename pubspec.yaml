@@ -25,16 +25,19 @@ dev_dependencies:
   sqlite3: any
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/app_icon.png
+    - assets/images/app_logo.png
 
 msix_config:
-  display_name: TJSP Planner
-  publisher_display_name: TJSP Planner
+  display_name: Meu Rumo
+  publisher_display_name: Meu Rumo
   publisher: CN=TJSP Planner Local Widget
   identity_name: br.com.studyplanner
   msix_version: 0.1.2.0
-  logo_path: android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+  logo_path: assets/images/app_icon.png
   output_path: build/windows/installer
-  output_name: TJSP-Planner
+  output_name: MeuRumo
   os_min_version: 10.0.22000.0
   startup_task:
     task_id: TJSPPlannerWidgetStartup

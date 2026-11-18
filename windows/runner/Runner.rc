@@ -90,7 +90,7 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "br.com.studyplanner" "\0"
-            VALUE "FileDescription", "study_planner" "\0"
+            VALUE "FileDescription", "Meu Rumo" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "study_planner" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 br.com.studyplanner. All rights reserved." "\0"

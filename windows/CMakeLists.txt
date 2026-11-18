@@ -52,18 +52,26 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
-# Build the lightweight taskbar widget and ship it beside the Flutter app.
+# Build the lightweight taskbar widget as a clean self-contained single-file exe
+# so target PCs never need .NET or .NET Framework installed.
 set(TASKBAR_WIDGET_PROJECT
   "${CMAKE_CURRENT_SOURCE_DIR}/taskbar_widget/TJSP.Planner.TaskbarWidget.csproj")
 set(TASKBAR_WIDGET_OUTPUT "${CMAKE_BINARY_DIR}/taskbar_widget_publish")
 add_custom_target(taskbar_widget ALL
+  COMMAND "${CMAKE_COMMAND}" -E remove_directory "${TASKBAR_WIDGET_OUTPUT}"
   COMMAND dotnet publish "${TASKBAR_WIDGET_PROJECT}"
     --configuration Release
     --runtime win-x64
     --self-contained true
+    -p:PublishSingleFile=true
+    -p:IncludeNativeLibrariesForSelfExtract=true
+    -p:IncludeAllContentForSelfExtract=true
+    -p:EnableCompressionInSingleFile=true
+    -p:DebugType=none
+    -p:DebugSymbols=false
     --output "${TASKBAR_WIDGET_OUTPUT}"
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  COMMENT "Building TJSP Planner taskbar widget"
+  COMMENT "Building Meu Rumo self-contained taskbar widget"
   VERBATIM)
 add_dependencies(${BINARY_NAME} taskbar_widget)
 

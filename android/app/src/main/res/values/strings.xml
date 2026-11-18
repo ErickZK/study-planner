@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TJSP Planner</string>
-    <string name="planner_widget_description">Pomodoro e tarefas do TJSP Planner</string>
+    <string name="app_name">Meu Rumo</string>
+    <string name="planner_widget_description">Pomodoro e tarefas do Meu Rumo</string>
 </resources>

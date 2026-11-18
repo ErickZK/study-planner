@@ -68,7 +68,7 @@ internal sealed class PlannerFlyoutWindow : Window
 
         Width = 430;
         Height = 636;
-        Title = "TJSP Planner — painel Pomodoro";
+        Title = "Meu Rumo — painel Pomodoro";
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = previewMode;
