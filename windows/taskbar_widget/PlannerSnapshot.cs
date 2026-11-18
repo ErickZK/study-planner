@@ -36,7 +36,7 @@ internal sealed record PlannerSnapshot(
             : BreakSeconds;
 
     internal static PlannerSnapshot Empty { get; } = new(
-        "TJSP Planner", false, 0, 0, false, "", 0, 0, 0, 0, 0, 0, 0, "");
+        "Meu Rumo", false, 0, 0, false, "", 0, 0, 0, 0, 0, 0, 0, "");
 
     internal int Percent => GoalMinutes <= 0
         ? 0
@@ -353,7 +353,7 @@ internal sealed record PlannerSnapshot(
             }
 
             return new PlannerSnapshot(
-                string.IsNullOrWhiteSpace(scheduleName) ? "TJSP Planner" : scheduleName,
+                string.IsNullOrWhiteSpace(scheduleName) ? "Meu Rumo" : scheduleName,
                 true,
                 goalMinutes,
                 todaySeconds,

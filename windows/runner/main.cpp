@@ -32,7 +32,7 @@ std::string RouteFromArguments(const std::vector<std::string>& arguments) {
 }
 
 bool ActivateExistingWindow(const std::string& route) {
-  HWND existing = FindWindowW(kWindowClassName, L"study_planner");
+  HWND existing = FindWindowW(kWindowClassName, L"Meu Rumo");
   if (existing == nullptr) return false;
 
   COPYDATASTRUCT message{};
@@ -106,7 +106,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"study_planner", origin, size)) {
+  if (!window.Create(L"Meu Rumo", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

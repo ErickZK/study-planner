@@ -27,7 +27,7 @@ class _StudyPlannerAppState extends ConsumerState<StudyPlannerApp> {
   Widget build(BuildContext context) {
     final database = ref.watch(databaseProvider);
     return MaterialApp.router(
-      title: 'Study Planner',
+      title: 'Meu Rumo',
       debugShowCheckedModeBanner: false,
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],
@@ -35,8 +35,23 @@ class _StudyPlannerAppState extends ConsumerState<StudyPlannerApp> {
       theme: buildTheme(),
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) => database.when(
-        loading: () =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        loading: () => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/app_logo.png',
+                  height: 52,
+                  filterQuality: FilterQuality.medium,
+                  semanticLabel: 'Meu Rumo',
+                ),
+                const SizedBox(height: AppTokens.large),
+                const CircularProgressIndicator(),
+              ],
+            ),
+          ),
+        ),
         error: (error, stack) => Scaffold(
           body: SafeArea(
             child: Center(

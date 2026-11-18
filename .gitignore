@@ -23,3 +23,5 @@ android/key.properties
 windows/widbar/
 windows/taskbar_widget/bin/
 windows/taskbar_widget/obj/
+dist/
+installer/Output/

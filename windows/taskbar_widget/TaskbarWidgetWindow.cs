@@ -37,7 +37,7 @@ internal sealed class TaskbarWidgetWindow : Window
         _theme = WidgetTheme.Current;
         Width = LogicalWidth;
         Height = 48;
-        Title = "TJSP Planner — barra de tarefas";
+        Title = "Meu Rumo — barra de tarefas";
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false;
@@ -219,7 +219,7 @@ internal sealed class TaskbarWidgetWindow : Window
             ? _snapshot.TimerState is "break" or "running" or "paused"
                 ? Clock(_snapshot.PhaseRemainingSeconds)
                 : $"{Duration(_snapshot.TodaySeconds)} / {Duration(_snapshot.GoalMinutes * 60)}  ·  {_snapshot.Percent}%"
-            : "TJSP Planner";
+            : "Meu Rumo";
         _secondaryText.Text = _snapshot.HasSchedule
             ? $"{_snapshot.Completed}/{_snapshot.Total} tarefas"
             : "Sem cronograma ativo";

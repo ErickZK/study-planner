@@ -194,22 +194,33 @@ class AppShell extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(11, 16, 11, 10),
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(10, 3, 10, 20),
-                    child: Row(
-                      children: [
-                        Text('⚖️', style: TextStyle(fontSize: 24)),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'TJSP Planner',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 4, 10, 18),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () {
+                        if (Scaffold.maybeOf(menuContext)?.isDrawerOpen ??
+                            false) {
+                          Scaffold.of(menuContext).closeDrawer();
+                        }
+                        context.go('/');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Image.asset(
+                            'assets/images/app_logo.png',
+                            height: 46,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.medium,
+                            semanticLabel: 'Meu Rumo',
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   item('/', 'Página inicial', Icons.home_outlined),
